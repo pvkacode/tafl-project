@@ -13,13 +13,19 @@ Frontend app to design and simulate DFA and NFA (with epsilon transitions) using
 
 ```bash
 npm install
-npm run install:all
 ```
 
 2. Start the app:
 
 ```bash
 npm run dev
+```
+
+3. (Optional) Build or preview production output:
+
+```bash
+npm run build
+npm run preview
 ```
 
 ## Port
