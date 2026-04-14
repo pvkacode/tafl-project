@@ -1,5 +1,36 @@
 import { useCallback, useMemo, useState } from "react";
-import { applyNodeChanges, applyEdgeChanges } from "reactflow";
+import { MarkerType, applyNodeChanges, applyEdgeChanges } from "reactflow";
+
+const HORIZONTAL_Y = 180;
+const HORIZONTAL_START_X = 120;
+const HORIZONTAL_GAP = 220;
+
+function normalizeTransitionSymbol(symbol) {
+  const value = String(symbol ?? "").trim();
+  if (!value) return "";
+  const lower = value.toLowerCase();
+  if (
+    value === "ε" ||
+    value === "ϵ" ||
+    value === "λ" ||
+    lower === "eps" ||
+    lower === "epsilon" ||
+    lower === "lambda"
+  ) {
+    return "ε";
+  }
+  return value;
+}
+
+function placeNodesHorizontally(nodes) {
+  return nodes.map((node, index) => ({
+    ...node,
+    position: {
+      x: node.position?.x ?? HORIZONTAL_START_X + index * HORIZONTAL_GAP,
+      y: HORIZONTAL_Y
+    }
+  }));
+}
 
 export function useAutomata() {
   const [type, setType] = useState("dfa");
@@ -23,7 +54,7 @@ export function useAutomata() {
       {
         id,
         type: "stateNode",
-        position: { x: 100 + prev.length * 40, y: 100 + prev.length * 30 },
+        position: { x: HORIZONTAL_START_X + prev.length * HORIZONTAL_GAP, y: HORIZONTAL_Y },
         data: { label: id, isStart: prev.length === 0, isAccept: false, isActive: false }
       }
     ]);
@@ -37,7 +68,7 @@ export function useAutomata() {
         {
           id,
           type: "stateNode",
-          position,
+          position: { x: position.x, y: HORIZONTAL_Y },
           data: { label: id, isStart: prev.length === 0, isAccept: false, isActive: false }
         }
       ];
@@ -90,13 +121,20 @@ export function useAutomata() {
         target: connection.target,
         label,
         type: "transitionEdge",
+        markerEnd: { type: MarkerType.ArrowClosed, color: "#64748b", width: 10, height: 10 },
         data: { isActive: false }
       }
     ]);
   }, [type]);
 
   const onNodesChange = useCallback(
-    (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
+    (changes) =>
+      setNodes((nds) =>
+        applyNodeChanges(changes, nds).map((node) => ({
+          ...node,
+          position: { ...node.position, y: HORIZONTAL_Y }
+        }))
+      ),
     []
   );
   const onEdgesChange = useCallback(
@@ -114,7 +152,7 @@ export function useAutomata() {
       for (const edge of edges) {
         const symbols = String(edge.label ?? "")
           .split(",")
-          .map((s) => s.trim())
+          .map((s) => normalizeTransitionSymbol(s))
           .filter(Boolean);
 
         if (!transitions[edge.source]) transitions[edge.source] = {};
@@ -134,10 +172,15 @@ export function useAutomata() {
   );
 
   const loadPreset = useCallback((preset) => {
-    setType(preset.type);
     setAlphabetInput(preset.alphabet.join(","));
-    setNodes(preset.nodes.map((node) => ({ ...node, data: { ...node.data, isActive: false } })));
-    setEdges(preset.edges.map((edge) => ({ ...edge, data: { isActive: false } })));
+    setNodes(placeNodesHorizontally(preset.nodes).map((node) => ({ ...node, data: { ...node.data, isActive: false } })));
+    setEdges(
+      preset.edges.map((edge) => ({
+        ...edge,
+        markerEnd: edge.markerEnd ?? { type: MarkerType.ArrowClosed, color: "#64748b", width: 10, height: 10 },
+        data: { isActive: false }
+      }))
+    );
   }, []);
 
   const setHighlights = useCallback((activeStates, activeTransitions) => {

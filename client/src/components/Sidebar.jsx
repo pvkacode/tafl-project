@@ -14,6 +14,8 @@ function Sidebar({
   loadPreset,
   exportAutomaton
 }) {
+  const filteredPresets = presets.filter((preset) => preset.type === type);
+
   return (
     <aside className="flex h-full w-full flex-col gap-4 rounded-xl border border-slate-800 bg-slate-900 p-4">
       <h1 className="text-lg font-bold text-cyan-300">Finite Automata Simulator</h1>
@@ -48,9 +50,9 @@ function Sidebar({
       </button>
 
       <div className="space-y-2">
-        <label className="text-xs uppercase text-slate-400">Presets</label>
+        <label className="text-xs uppercase text-slate-400">Presets ({type.toUpperCase()})</label>
         <div className="space-y-2">
-          {presets.map((preset) => (
+          {filteredPresets.map((preset) => (
             <button
               key={preset.id}
               onClick={() => loadPreset(preset)}
@@ -59,6 +61,9 @@ function Sidebar({
               {preset.label}
             </button>
           ))}
+          {filteredPresets.length === 0 && (
+            <p className="text-xs text-slate-500">No presets available for this automata type.</p>
+          )}
         </div>
       </div>
 

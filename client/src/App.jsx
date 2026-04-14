@@ -89,6 +89,8 @@ function App() {
           steps={simulation.steps}
           accepted={simulation.accepted}
           exportSummary={simulation.exportSummary}
+          canStepForward={simulation.canStepForward}
+          canStepBackward={simulation.canStepBackward}
         />
       </main>
     </div>

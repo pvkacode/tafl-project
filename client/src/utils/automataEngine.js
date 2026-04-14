@@ -1,3 +1,41 @@
+function normalizeSymbol(symbol) {
+  const value = String(symbol ?? "").trim();
+  if (!value) return "";
+  const lower = value.toLowerCase();
+  if (
+    value === "ε" ||
+    value === "ϵ" ||
+    value === "λ" ||
+    lower === "eps" ||
+    lower === "epsilon" ||
+    lower === "lambda"
+  ) {
+    return "ε";
+  }
+  return value;
+}
+
+function normalizeTransitions(transitions, type) {
+  const normalized = {};
+  for (const [fromState, symbolsMap] of Object.entries(transitions ?? {})) {
+    if (!normalized[fromState]) normalized[fromState] = {};
+    for (const [rawSymbol, rawTargets] of Object.entries(symbolsMap ?? {})) {
+      const symbol = normalizeSymbol(rawSymbol);
+      if (!symbol) continue;
+
+      if (type === "dfa") {
+        const firstTarget = Array.isArray(rawTargets) ? rawTargets[0] : rawTargets;
+        normalized[fromState][symbol] = firstTarget;
+      } else {
+        const targetList = Array.isArray(rawTargets) ? rawTargets : [rawTargets];
+        if (!normalized[fromState][symbol]) normalized[fromState][symbol] = [];
+        normalized[fromState][symbol].push(...targetList);
+      }
+    }
+  }
+  return normalized;
+}
+
 function epsilonClosure(stateSet, transitions) {
   const closure = new Set(stateSet);
   const stack = [...stateSet];
@@ -19,6 +57,7 @@ function epsilonClosure(stateSet, transitions) {
 export function validateAutomaton({ type, states, alphabet, transitions, startState, acceptStates }) {
   const errors = [];
   const stateSet = new Set(states);
+  const normalizedTransitions = normalizeTransitions(transitions, type);
 
   if (!states?.length) errors.push("At least one state is required.");
   if (!startState) errors.push("Start state is required.");
@@ -28,7 +67,7 @@ export function validateAutomaton({ type, states, alphabet, transitions, startSt
     if (!stateSet.has(finalState)) errors.push(`Accept state "${finalState}" does not exist.`);
   }
 
-  for (const [fromState, symbolsMap] of Object.entries(transitions ?? {})) {
+  for (const [fromState, symbolsMap] of Object.entries(normalizedTransitions)) {
     if (!stateSet.has(fromState)) {
       errors.push(`Transition source "${fromState}" is not a valid state.`);
       continue;
@@ -53,11 +92,12 @@ export function validateAutomaton({ type, states, alphabet, transitions, startSt
 }
 
 export function simulateDFA({ transitions, startState, acceptStates, inputString }) {
+  const normalizedTransitions = normalizeTransitions(transitions, "dfa");
   const steps = [];
   let currentState = startState;
 
   for (const symbol of inputString) {
-    const nextState = transitions[currentState]?.[symbol];
+    const nextState = normalizedTransitions[currentState]?.[normalizeSymbol(symbol)];
     steps.push({
       currentState,
       symbol,
@@ -75,25 +115,27 @@ export function simulateDFA({ transitions, startState, acceptStates, inputString
 }
 
 export function simulateNFA({ transitions, startState, acceptStates, inputString }) {
+  const normalizedTransitions = normalizeTransitions(transitions, "nfa");
   const steps = [];
-  let currentStates = epsilonClosure(new Set([startState]), transitions);
+  let currentStates = epsilonClosure(new Set([startState]), normalizedTransitions);
 
   for (const symbol of inputString) {
     const rawNext = new Set();
     const traversed = [];
+    const normalizedInputSymbol = normalizeSymbol(symbol);
 
     for (const state of currentStates) {
-      const nextList = transitions[state]?.[symbol] ?? [];
+      const nextList = normalizedTransitions[state]?.[normalizedInputSymbol] ?? [];
       for (const target of nextList) {
         rawNext.add(target);
-        traversed.push({ from: state, to: target, symbol });
+        traversed.push({ from: state, to: target, symbol: normalizedInputSymbol });
       }
     }
 
-    const nextStates = epsilonClosure(rawNext, transitions);
+    const nextStates = epsilonClosure(rawNext, normalizedTransitions);
     steps.push({
       currentStates: [...currentStates],
-      symbol,
+      symbol: normalizedInputSymbol,
       nextStates: [...nextStates],
       transitions: traversed
     });

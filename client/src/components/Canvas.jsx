@@ -1,4 +1,4 @@
-import ReactFlow, { Background, Controls, MiniMap } from "reactflow";
+import ReactFlow, { Background, Controls, MarkerType, MiniMap } from "reactflow";
 import "reactflow/dist/style.css";
 
 function Canvas({
@@ -27,6 +27,9 @@ function Canvas({
         onPaneDoubleClick={onPaneDoubleClick}
         onNodeClick={onNodeClick}
         onNodeContextMenu={onNodeContextMenu}
+        defaultEdgeOptions={{
+          markerEnd: { type: MarkerType.ArrowClosed, color: "#64748b", width: 10, height: 10 }
+        }}
       >
         <Background color="#334155" gap={24} />
         <MiniMap />

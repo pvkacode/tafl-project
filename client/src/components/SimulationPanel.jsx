@@ -16,7 +16,9 @@ function SimulationPanel({
   activeStepIndex,
   steps,
   accepted,
-  exportSummary
+  exportSummary,
+  canStepForward,
+  canStepBackward
 }) {
   const currentSymbol = inputString[activeStepIndex] ?? null;
   const remaining = inputString.slice(activeStepIndex);
@@ -33,10 +35,18 @@ function SimulationPanel({
         <button className="rounded bg-cyan-500 px-3 py-2 text-sm font-semibold text-slate-900" onClick={simulate}>
           Simulate
         </button>
-        <button className="rounded bg-slate-700 px-3 py-2 text-sm" onClick={prevStep}>
+        <button
+          className="rounded bg-slate-700 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+          onClick={prevStep}
+          disabled={!canStepBackward}
+        >
           Previous
         </button>
-        <button className="rounded bg-slate-700 px-3 py-2 text-sm" onClick={nextStep}>
+        <button
+          className="rounded bg-slate-700 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+          onClick={nextStep}
+          disabled={!canStepForward}
+        >
           Next
         </button>
         <button className="rounded bg-slate-700 px-3 py-2 text-sm" onClick={() => setAutoPlay(!autoPlay)}>

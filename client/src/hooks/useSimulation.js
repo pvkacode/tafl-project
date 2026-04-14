@@ -57,12 +57,19 @@ export function useSimulation({
   }, [currentStep, initialStates, setHighlights, type]);
 
   const nextStep = useCallback(() => {
+    if (steps.length === 0) return;
+    setAutoPlay(false);
     setActiveStepIndex((prev) => Math.min(prev + 1, steps.length));
   }, [steps.length]);
 
   const prevStep = useCallback(() => {
+    if (steps.length === 0) return;
+    setAutoPlay(false);
     setActiveStepIndex((prev) => Math.max(prev - 1, 0));
-  }, []);
+  }, [steps.length]);
+
+  const canStepForward = activeStepIndex < steps.length;
+  const canStepBackward = activeStepIndex > 0 && steps.length > 0;
 
   const resetSimulation = useCallback(() => {
     setSteps([]);
@@ -122,7 +129,9 @@ export function useSimulation({
     setAutoPlay,
     speed,
     setSpeed,
-    exportSummary
+    exportSummary,
+    canStepForward,
+    canStepBackward
   };
 }
 
